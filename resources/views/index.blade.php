@@ -50,8 +50,8 @@
                                             <div class="nk-tb-col"><span>Created At</span></div>
                                             <div class="nk-tb-col"><span>Status</span></div>
                                             <div class="nk-tb-col"><span>Assign Url</span></div>
-
-
+                                            <div class="nk-tb-col"><span>License</span></div>
+                                            <div class="nk-tb-col"><span></span></div>
                                         </div><!-- .nk-tb-item -->
                                         @isset($data)
                                             @forelse ($data as $row)
@@ -76,8 +76,9 @@
                                                             <input type="checkbox" class="custom-control-input toggle-switch"
                                                                 data-id="{{ $row->id }}"
                                                                 {{ $row->status == 'enable' ? 'checked' : '' }}
-                                                                id="activity-log"><label class="custom-control-label"
-                                                                for="activity-log"></label>
+                                                                id="activity-log_{{ $row->id }}"><label
+                                                                class="custom-control-label"
+                                                                for="activity-log_{{ $row->id }}"></label>
                                                         </div>
                                                         {{-- <span class="tb-sub">{{ $row->assign_url }}</span> --}}
                                                     </div>
@@ -115,10 +116,58 @@
 
                                                     </div>
 
+                                                    <div class="nk-tb-col">
+                                                        @if (isset($row->licence_pkg))
+                                                            <div class="drodown"><a
+                                                                    href="{{ route('user.licence', $row->id) }}"
+                                                                    class="btn btn-icon btn-trigger">
+
+                                                                    <em class="icon ni ni-edit"></em>
+                                                                </a>
+
+                                                            </div>
+                                                        @else
+                                                            <div class="drodown"><a
+                                                                    href="{{ route('user.licence', $row->id) }}"
+                                                                    class="btn btn-icon btn-trigger">
+
+                                                                    <em class="icon ni ni-plus"></em>
+                                                                </a>
+
+                                                            </div>
+                                                        @endif
 
 
+                                                    </div>
 
 
+                                                    <div class="nk-tb-col nk-tb-col-tools">
+                                                        <ul class="nk-tb-actions gx-1 my-n1">
+                                                            <li class="me-n1">
+                                                                <div class="dropdown">
+                                                                    <a href="#"
+                                                                        class="dropdown-toggle btn btn-icon btn-trigger"
+                                                                        data-bs-toggle="dropdown"><em
+                                                                            class="icon ni ni-more-h"></em></a>
+                                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                                        <ul class="link-list-opt no-bdr">
+
+                                                                            <li><a href="#" class="eg-swal-av3"
+                                                                                    data-id="{{ route('user.delete', $row->id) }}"><em
+                                                                                        class="icon ni ni-trash"></em><span>Remove
+                                                                                        Id</span></a></li>
+                                                                            @if (isset($row->licence_pkg))
+                                                                                <li><a href="#" class="eg-swal-av3"
+                                                                                        data-id="{{ route('licence.remove', $row->id) }}"><em
+                                                                                            class="icon ni ni-trash"></em><span>Remove
+                                                                                            Licence</span></a></li>
+                                                                            @endif
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
 
 
 
@@ -153,6 +202,26 @@
                 $("#table_search .tr_cust").filter(function() {
                     $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
                 });
+            });
+            $('.eg-swal-av3').on("click", function(e) {
+                var deletePath = $(this).attr("data-id");
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, Delete it!',
+                    confirmButtonColor: "#e85347",
+                    cancelButtonColor: "#003366",
+                }).then(function(result) {
+                    if (result.value) {
+
+                        window.location.href = deletePath;
+                        // Swal.fire('Deleted!', 'Your file has been deleted.', 'success');
+                    }
+                });
+                e.preventDefault();
             });
         });
 

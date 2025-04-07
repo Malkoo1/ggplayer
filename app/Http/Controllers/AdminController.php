@@ -9,12 +9,94 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\AppRecord;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
     public function showLogin()
     {
         return view('login');
+    }
+    public function userLicence($id)
+    {
+        $licence = AppRecord::find($id);
+        $daysLeft = null; // Initialize daysLeft
+
+        if ($licence->licence_pkg && $licence->licence_expire) {
+            $expiryDate = Carbon::parse($licence->licence_expire);
+            $now = Carbon::now();
+
+            if ($expiryDate->greaterThan($now)) {
+                $daysLeft = round($now->diffInDays($expiryDate));
+            } else {
+                $daysLeft = 0; // Or a negative value if you want to show it's expired
+            }
+        }
+
+        return view('licence', compact('licence', 'daysLeft'));
+    }
+
+    public function makeUserLicence(Request $request, $id)
+    {
+        $licence = AppRecord::findOrFail($id); // Find the AppRecord or fail if not found
+
+        // Get the selected licence package value from the form
+        $licencePkgValue = $request->input('plan');
+
+        // Determine the licence package name based on the value (you might need to adjust this)
+        $licencePkgName = '';
+        switch ($licencePkgValue) {
+            case '1':
+                $licencePkgName = '1 Month';
+                break;
+            case '3':
+                $licencePkgName = '3 Month';
+                break;
+            case '6':
+                $licencePkgName = '6 Month';
+                break;
+            case '12':
+                $licencePkgName = '12 Month';
+                break;
+            case 'unlimited':
+                $licencePkgName = 'Unlimited';
+                break;
+            default:
+                $licencePkgName = 'Unknown'; // Handle cases where the value doesn't match
+                break;
+        }
+
+        // Calculate the expiry date
+        if ($licencePkgValue === 'unlimited') {
+            $licenceExpire = Carbon::now()->addYears(100); // Set to a very far future date
+        } else {
+            $monthsToAdd = (int) $licencePkgValue;
+            $licenceExpire = Carbon::now()->addMonths($monthsToAdd);
+        }
+
+        // Get the note from the form
+        $note = $request->input('note');
+
+        // Update the AppRecord
+        $licence->licence_pkg = $licencePkgName;
+        $licence->licence_expire = $licenceExpire;
+        $licence->note = $note;
+        $licence->save();
+
+        // Redirect back with a success message
+        return redirect()->back()->with('success', 'Licence updated successfully.');
+    }
+
+    public function removeUserLicence($id)
+    {
+        $licence = AppRecord::findOrFail($id); // Find the AppRecord or fail if not found
+
+        $licence->licence_pkg = null;
+        $licence->licence_expire = null;
+        $licence->note = null;
+        $licence->save();
+
+        return redirect()->back()->with('success', 'Licence removed successfully.');
     }
 
     public function authLogin(Request $request)
@@ -103,5 +185,26 @@ class AdminController extends Controller
         Session::flush();
         Auth::logout();
         return redirect()->route('login');
+    }
+    public function settingsPage()
+    {
+        return view('settings');
+    }
+
+    public function updateSettings(Request $request)
+    {
+
+        $data = User::find(auth()->user()->id);
+        $data->approve_status = $request->auto_approve ?? 'off';
+
+        $data->assign_url = $request->assing_url;
+        $data->update();
+        return  redirect('/admin/settings')->with('success', 'Settings Updated Successfully!');
+    }
+    public function userDelete($id)
+    {
+
+        $data = AppRecord::find($id)->delete();
+        return  redirect('/admin/home')->with('success', 'App Deleted Successfully!');
     }
 }

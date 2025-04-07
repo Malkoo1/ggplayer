@@ -96,6 +96,10 @@
                                                             class="icon ni ni-user-alt"></em><span>Update
                                                             Profile</span></a></li>
 
+                                                <li><a href="/admin/settings"><em
+                                                            class="icon ni ni-setting-alt"></em><span>Setting</span></a>
+                                                </li>
+
                                                 <li><a class="dark-mode-switch dark-switch" href="#"><em
                                                             class="icon ni ni-moon"></em><span>Dark Mode</span></a></li>
                                             </ul>
