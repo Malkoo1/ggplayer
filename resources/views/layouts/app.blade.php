@@ -5,12 +5,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Fav Icon  -->
-    <link rel="shortcut icon" href="{{ asset('assets/images/favicon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/images/logo-dark.png') }}">
     <!-- Page Title  -->
     <title>GG Player Dashboard</title>
     <!-- StyleSheets  -->
     <link rel="stylesheet" href="{{ asset('assets/css/dashlite.css') }}">
     <link id="skin-default" rel="stylesheet" href="{{ asset('assets/css/theme.css') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        .nk-chat-panel {
+            height: 361px !important;
+        }
+    </style>
 </head>
 
 <body class="nk-body npc-invest bg-lighter ">
@@ -26,17 +32,19 @@
                                     class="icon ni ni-menu"></em></a>
                         </div>
                         <div class="nk-header-brand">
-                            <a href="/admin/home" class="logo-link">
+                            <a href="{{ auth()->user()->role === 'admin' ? '/admin/dashboard' : '/reseller/dashboard' }}"
+                                class="logo-link">
                                 <img class="logo-light logo-img" src="{{ asset('assets/images/logo.png') }}"
-                                    srcset="{{ asset('assets/images/logo2x.png') }} 2x" alt="logo">
+                                    srcset="{{ asset('assets/images/logo.png') }}" alt="logo">
                                 <img class="logo-dark logo-img" src="{{ asset('assets/images/logo-dark.png') }}"
-                                    srcset="{{ asset('assets/images/logo-dark2x.png') }} 2x" alt="logo-dark">
+                                    srcset="{{ asset('assets/images/logo.png') }}" alt="logo-dark">
                             </a>
                         </div><!-- .nk-header-brand -->
                         <div class="nk-header-menu" data-content="headerNav">
                             <div class="nk-header-mobile">
                                 <div class="nk-header-brand">
-                                    <a href="/admin/home" class="logo-link">
+                                    <a href="{{ auth()->user()->role === 'admin' ? '/admin/dashboard' : '/reseller/dashboard' }}"
+                                        class="logo-link">
                                         <img class="logo-light logo-img" src="{{ asset('assets/images/logo.png') }}"
                                             srcset="{{ asset('assets/images/logo2x.png') }} 2x" alt="logo">
                                         <img class="logo-dark logo-img"
@@ -51,12 +59,23 @@
                             </div>
                             <ul class="nk-menu nk-menu-main ui-s2">
                                 <li class="nk-menu-item has-sub">
-                                    <a href="/admin/home" class="nk-menu-link">
+                                    <a href="{{ auth()->user()->role === 'admin' ? '/admin/dashboard' : '/reseller/dashboard' }}"
+                                        class="nk-menu-link">
                                         <span class="nk-menu-text">Home</span>
                                     </a>
-
                                 </li><!-- .nk-menu-item -->
-
+                                @if (auth()->user()->role === 'admin')
+                                    <li class="nk-menu-item">
+                                        <a href="{{ route('resellers.index') }}" class="nk-menu-link">
+                                            <span class="nk-menu-text">Resellers</span>
+                                        </a>
+                                    </li><!-- .nk-menu-item -->
+                                @endif
+                                <li class="nk-menu-item">
+                                    <a href="{{ route('chat.index') }}" class="nk-menu-link">
+                                        <span class="nk-menu-text">Chat</span>
+                                    </a>
+                                </li><!-- .nk-menu-item -->
                             </ul><!-- .nk-menu -->
                         </div><!-- .nk-header-menu -->
                         <div class="nk-header-tools">
@@ -69,7 +88,7 @@
                                                 <em class="icon ni ni-user-alt"></em>
                                             </div>
                                             <div class="user-info d-none d-xl-block">
-                                                <div class="user-status">Administrator</div>
+                                                <div class="user-status">{{ ucfirst(auth()->user()->role) }}</div>
                                                 <div class="user-name dropdown-indicator">{{ auth()->user()->name }}
                                                 </div>
                                             </div>
@@ -92,13 +111,19 @@
 
                                         <div class="dropdown-inner">
                                             <ul class="link-list">
-                                                <li><a href="/admin/updatepassword"><em
-                                                            class="icon ni ni-user-alt"></em><span>Update
-                                                            Profile</span></a></li>
+                                                @if (auth()->user()->role === 'admin')
+                                                    <li><a href="/admin/updatepassword"><em
+                                                                class="icon ni ni-user-alt"></em><span>Update
+                                                                Profile</span></a></li>
 
-                                                <li><a href="/admin/settings"><em
-                                                            class="icon ni ni-setting-alt"></em><span>Setting</span></a>
-                                                </li>
+                                                    <li><a href="/admin/settings"><em
+                                                                class="icon ni ni-setting-alt"></em><span>Setting</span></a>
+                                                    </li>
+                                                @else
+                                                    <li><a href="{{ route('reseller.profile') }}"><em
+                                                                class="icon ni ni-user-alt"></em><span>Update
+                                                                Profile</span></a></li>
+                                                @endif
 
                                                 <li><a class="dark-mode-switch dark-switch" href="#"><em
                                                             class="icon ni ni-moon"></em><span>Dark Mode</span></a></li>
@@ -106,7 +131,8 @@
                                         </div>
                                         <div class="dropdown-inner">
                                             <ul class="link-list">
-                                                <li><a href="{{ url('/admin/logout') }}"><em
+                                                <li><a
+                                                        href="{{ auth()->user()->role === 'admin' ? url('/admin/logout') : route('reseller.logout') }}"><em
                                                             class="icon ni ni-signout"></em><span>Sign out</span></a>
                                                 </li>
                                             </ul>

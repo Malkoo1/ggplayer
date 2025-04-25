@@ -14,9 +14,14 @@ return new class extends Migration
         Schema::create('app_records', function (Blueprint $table) {
             $table->id();
             $table->text('app_id')->unique();
-            $table->string('os');
-            $table->string('status')->default('disable');
+            $table->enum('os', ['android', 'ios']);
+            $table->enum('status', ['enable', 'disable'])->default('disable');
             $table->text('assign_url')->nullable();
+            $table->foreignId('reseller_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->timestamp('expiry_date')->nullable();
+            $table->string('licence_pkg', 255)->nullable();
+            $table->datetime('licence_expire')->nullable();
+            $table->text('note')->nullable();
             $table->timestamps();
         });
     }
