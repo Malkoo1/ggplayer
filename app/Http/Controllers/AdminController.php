@@ -103,15 +103,18 @@ class AdminController extends Controller
     {
         $inputVal = $request->all();
 
-
         $validatedData = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-
-        if (auth()->attempt(array('email' => $inputVal['email'], 'password' => $inputVal['password']))) {
-            return redirect()->route('home');
+        if (Auth::attempt(['email' => $inputVal['email'], 'password' => $inputVal['password']])) {
+            // Redirect based on user role
+            if (Auth::user()->isAdmin()) {
+                return redirect()->route('admin.dashboard');
+            } else {
+                return redirect()->route('reseller.dashboard');
+            }
         } else {
             return redirect()->route('login')
                 ->with('fail', 'Email & Password are incorrect.');
@@ -120,15 +123,12 @@ class AdminController extends Controller
 
     public function adminHome()
     {
-
         $data = AppRecord::orderBy('id', 'desc')->get();
         return view('index', compact('data'));
     }
 
-
     public function switchUpdate(Request $request)
     {
-
         $data = AppRecord::find($request->id);
         $data->status = $request->status;
         $data->update();
@@ -143,7 +143,6 @@ class AdminController extends Controller
 
     public function updateUrl(Request $request, $id)
     {
-
         $validatedData = $request->validate([
             'assign_url' => 'required',
         ]);
@@ -155,9 +154,6 @@ class AdminController extends Controller
         return  redirect()->back()->with('success', 'Assign URL Updated Successfully!');
     }
 
-
-
-
     public function updateShowPage()
     {
         return view('updatepassword');
@@ -165,17 +161,14 @@ class AdminController extends Controller
 
     public function updateLoginCrend(Request $request)
     {
-
-
         $validatedData = $request->validate([
             'current_password' => ['required', new MatchOldPassword],
             'new_password' => ['required'],
             'new_confirm_password' => ['required', 'same:new_password'],
             'email' => ['required', 'email'],
-
         ]);
 
-        User::find(auth()->user()->id)->update(['password' => Hash::make($request->new_password), 'email' => $request->email]);
+        User::find(Auth::id())->update(['password' => Hash::make($request->new_password), 'email' => $request->email]);
 
         return  redirect('/admin/updatepassword')->with('success', 'Your Crenditional Updated Successfully!');
     }
@@ -186,6 +179,7 @@ class AdminController extends Controller
         Auth::logout();
         return redirect()->route('login');
     }
+
     public function settingsPage()
     {
         return view('settings');
@@ -193,18 +187,19 @@ class AdminController extends Controller
 
     public function updateSettings(Request $request)
     {
-
-        $data = User::find(auth()->user()->id);
+        $data = User::find(Auth::id());
         $data->approve_status = $request->auto_approve ?? 'off';
-
         $data->assign_url = $request->assing_url;
         $data->update();
-        return  redirect('/admin/settings')->with('success', 'Settings Updated Successfully!');
+
+        return redirect()->back()->with('success', 'Settings Updated Successfully!');
     }
+
     public function userDelete($id)
     {
+        $data = AppRecord::find($id);
+        $data->delete();
 
-        $data = AppRecord::find($id)->delete();
-        return  redirect('/admin/home')->with('success', 'App Deleted Successfully!');
+        return redirect()->back()->with('success', 'User Deleted Successfully!');
     }
 }
