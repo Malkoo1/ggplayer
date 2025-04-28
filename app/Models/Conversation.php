@@ -24,7 +24,7 @@ class Conversation extends Model
     {
         return $this->belongsToMany(User::class, 'conversation_participants')
             ->select('users.id', 'users.name', 'conversation_participants.*')
-            ->withPivot(['is_favorite', 'is_muted', 'is_blocked', 'last_read_at'])
+            ->withPivot(['is_favorite', 'is_muted', 'is_blocked', 'last_read_at', 'is_creator'])
             ->withTimestamps();
     }
 

@@ -16,6 +16,10 @@
         .nk-chat-panel {
             height: 361px !important;
         }
+
+        .select2-selection__clear {
+            display: none;
+        }
     </style>
 </head>
 
@@ -80,7 +84,28 @@
                         </div><!-- .nk-header-menu -->
                         <div class="nk-header-tools">
                             <ul class="nk-quick-nav">
+                                <li class="dropdown notification-dropdown"><a href="#"
+                                        class="dropdown-toggle nk-quick-nav-icon" data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                        <div class="icon-statusss" style="display: inline-flex">
+                                            <em class="icon ni ni-bell"></em>
+                                        </div>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-xl dropdown-menu-end dropdown-menu-s1"
+                                        style="">
+                                        <div class="dropdown-head"><span
+                                                class="sub-title nk-dropdown-title">Notifications</span>
+                                            {{-- <a
+                                                href="#">Mark All as Read</a> --}}
+                                        </div>
+                                        <div class="dropdown-body">
+                                            <div class="nk-notification">
 
+                                            </div>
+                                        </div>
+                                        {{-- <div class="dropdown-foot center"><a href="#">View All</a></div> --}}
+                                    </div>
+                                </li>
                                 <li class="dropdown user-dropdown order-sm-first">
                                     <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">
                                         <div class="user-toggle">
@@ -126,7 +151,8 @@
                                                 @endif
 
                                                 <li><a class="dark-mode-switch dark-switch" href="#"><em
-                                                            class="icon ni ni-moon"></em><span>Dark Mode</span></a></li>
+                                                            class="icon ni ni-moon"></em><span>Dark Mode</span></a>
+                                                </li>
                                             </ul>
                                         </div>
                                         <div class="dropdown-inner">
@@ -173,6 +199,7 @@
     <script src="{{ asset('assets/js/bundle.js') }}"></script>
     <script src="{{ asset('assets/js/scripts.js') }}"></script>
     <script src="{{ asset('assets/js/charts/gd-invest.js') }}"></script>
+    <script src="{{ asset('js/chat.js') }}"></script>
     @yield('script_content')
 </body>
 

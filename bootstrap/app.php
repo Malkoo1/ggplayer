@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => \App\Http\Middleware\Authenticate::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'reseller' => \App\Http\Middleware\ResellerMiddleware::class,
+            'admin_or_reseller' => \App\Http\Middleware\AdminOrResellerMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

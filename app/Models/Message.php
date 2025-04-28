@@ -13,7 +13,8 @@ class Message extends Model
         'message',
         'status',
         'is_edited',
-        'edited_at'
+        'edited_at',
+        'media_id',
     ];
 
     protected $casts = [

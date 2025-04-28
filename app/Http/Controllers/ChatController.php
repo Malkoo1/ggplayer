@@ -28,9 +28,10 @@ class ChatController extends Controller
                 return $conversation->lastMessage?->created_at;
             });
 
+
         // Get all users except the current user for group creation
         $users = User::where('id', '!=', $user->id)
-            ->where('role', '!=', 'admin') // Exclude admin users if needed
+            // ->where('role', '!=', 'admin') // Exclude admin users if needed
             ->get();
 
         return view('chat.index', [
@@ -52,9 +53,23 @@ class ChatController extends Controller
             'name' => $request->name
         ]);
 
-        $conversation->participants()->attach(array_merge([Auth::id()], $request->participants));
+        $participants = collect($request->participants)->mapWithKeys(function ($id) {
+            return [$id => ['is_creator' => false]];
+        })->toArray();
 
-        return redirect()->route('chat.index')->with('success', 'Group created successfully');
+        // $conversation->participants()->attach(array_merge([Auth::id()], $request->participants));
+
+        // Add the current user as creator
+        $participants[Auth::id()] = ['is_creator' => true];
+
+        $conversation->participants()->attach($participants);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Group created successfully"
+        ]);
+
+        // return redirect()->route('chat.index')->with('success', 'Group created successfully');
     }
 
     public function sendMessage(Request $request, Conversation $conversation)
@@ -104,6 +119,71 @@ class ChatController extends Controller
         $conversation->markAsRead();
 
         return response()->json($messages);
+    }
+
+    public function checkLatestMessages(Conversation $conversation)
+    {
+        $lastMessage = $conversation->messages()
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $hasNewMessages = false;
+        if ($lastMessage) {
+            $lastReadAt = $conversation->participants()
+                ->where('user_id', Auth::id())
+                ->first()
+                ->pivot
+                ->last_read_at;
+
+            $hasNewMessages = !$lastReadAt || $lastMessage->created_at > $lastReadAt;
+        }
+
+        return response()->json([
+            'hasNewMessages' => $hasNewMessages
+        ]);
+    }
+
+    public function checkAllConversations()
+    {
+        $user = Auth::user();
+
+        $conversations = Conversation::whereHas('participants', function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })->with(['messages' => function ($query) {
+            $query->orderBy('created_at', 'desc');
+        }, 'participants' => function ($query) use ($user) {
+            $query->where('user_id', '!=', $user->id);
+        }])->get();
+
+        $unreadConversations = [];
+        foreach ($conversations as $conversation) {
+            $lastMessage = $conversation->messages->first();
+            if ($lastMessage) {
+                $lastReadAt = $conversation->participants()
+                    ->where('user_id', $user->id)
+                    ->first()
+                    ->pivot
+                    ->last_read_at;
+
+                if (!$lastReadAt || $lastMessage->created_at > $lastReadAt) {
+                    $otherParticipant = $conversation->participants->first();
+                    $unreadConversations[] = [
+                        'id' => $conversation->id,
+                        'name' => $conversation->name ?? $otherParticipant->name,
+                        'lastMessage' => $lastMessage->message,
+                        'timestamp' => $lastMessage->created_at,
+                        'type' => $conversation->type,
+                        'isGroup' => $conversation->type === 'group',
+                        'icon' => $conversation->type === 'group' ? 'ni-users' : 'ni-user',
+                        'iconBg' => $conversation->type === 'group' ? 'bg-primary-dim' : 'bg-info-dim'
+                    ];
+                }
+            }
+        }
+
+        return response()->json([
+            'unreadConversations' => $unreadConversations
+        ]);
     }
 
     public function toggleFavorite(Conversation $conversation)
@@ -203,5 +283,121 @@ class ChatController extends Controller
             'success' => true,
             'conversation' => $conversation
         ]);
+    }
+
+    public function getConversationDetails(Conversation $conversation)
+    {
+        $conversation->load([
+            'participants',
+            'messages' => function ($query) {
+                $query->orderBy('created_at', 'asc');
+            },
+            'messages.user',
+            'messages.media'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'conversation' => $conversation
+        ]);
+    }
+
+    public function updateGroup(Request $request, Conversation $conversation)
+    {
+        if ($conversation->type !== 'group') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This is not a group conversation'
+            ], 400);
+        }
+
+        // Check if the current user is the group creator
+        // $creator = $conversation->participants()
+        //     ->wherePivot('is_creator', true)
+        //     ->first();
+
+        // if (!$creator || $creator->id !== Auth::id()) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'Only the group creator can edit the group'
+        //     ], 403);
+        // }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'participants' => 'required|array|min:2'
+        ]);
+
+        $conversation->update([
+            'name' => $request->name
+        ]);
+
+        // Sync participants (this will detach old ones and attach new ones)
+        $conversation->participants()->sync(array_merge([Auth::id()], $request->participants));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Group updated successfully'
+        ]);
+    }
+
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'conversation_id' => 'required|exists:conversations,id'
+        ]);
+
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $filename = time() . '_' . $image->getClientOriginalName();
+
+            // Create uploads directory if it doesn't exist
+            if (!file_exists(public_path('uploads'))) {
+                mkdir(public_path('uploads'), 0777, true);
+            }
+
+            // Move the file to public/uploads
+            $image->move(public_path('uploads'), $filename);
+            $url = '/uploads/' . $filename;
+
+            // Create shared media record
+            $sharedMedia = SharedMedia::create([
+                'conversation_id' => $request->conversation_id,
+                'user_id' => Auth::id(),
+                'type' => 'image',
+                'path' => $url
+            ]);
+
+            // Get the conversation
+            $conversation = Conversation::findOrFail($request->conversation_id);
+
+            // Create message with image
+            $message = $conversation->messages()->create([
+                'user_id' => Auth::id(),
+                'status' => 'sent',
+                'media_id' => $sharedMedia->id
+            ]);
+
+            // Mark as delivered for other participants
+            $conversation->participants()
+                ->where('user_id', '!=', Auth::id())
+                ->get()
+                ->each(function ($participant) use ($message) {
+                    $message->markAsDelivered();
+                });
+
+            return response()->json([
+                'success' => true,
+                'url' => $url,
+                'media_id' => $sharedMedia->id,
+                'message_id' => $message->id
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No image was uploaded'
+        ], 400);
     }
 }

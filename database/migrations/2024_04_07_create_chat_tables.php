@@ -26,6 +26,7 @@ return new class extends Migration
             $table->boolean('is_favorite')->default(false);
             $table->boolean('is_muted')->default(false);
             $table->boolean('is_blocked')->default(false);
+            $table->boolean('is_creator')->default(false);
             $table->timestamp('last_read_at')->nullable();
             $table->timestamps();
         });

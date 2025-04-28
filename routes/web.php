@@ -58,17 +58,23 @@ Route::middleware(['reseller'])->group(function () {
 });
 
 // Chat Routes
-// Route::middleware(['auth'])->group(function () {
-Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-Route::post('/chat/group', [ChatController::class, 'createGroup'])->name('chat.createGroup');
-Route::post('/chat/{conversation}/message', [ChatController::class, 'sendMessage'])->name('chat.sendMessage');
-Route::get('/chat/{conversation}/messages', [ChatController::class, 'getMessages'])->name('chat.getMessages');
-Route::post('/chat/{conversation}/mute', [ChatController::class, 'toggleMute'])->name('chat.toggleMute');
-Route::post('/chat/message/{message}/edit', [ChatController::class, 'editMessage'])->name('chat.editMessage');
-Route::delete('/chat/message/{message}', [ChatController::class, 'deleteMessage'])->name('chat.deleteMessage');
-Route::delete('/chat/{conversation}', [ChatController::class, 'deleteConversation'])->name('chat.deleteConversation');
-Route::post('/chat/direct', [ChatController::class, 'startDirectChat'])->name('chat.direct');
-// });
+Route::middleware(['admin_or_reseller'])->group(function () {
+    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+    Route::post('/chat/group', [ChatController::class, 'createGroup'])->name('chat.createGroup');
+    Route::put('/chat/group/{conversation}', [ChatController::class, 'updateGroup'])->name('chat.updateGroup');
+    Route::post('/chat/{conversation}/message', [ChatController::class, 'sendMessage'])->name('chat.sendMessage');
+    Route::get('/chat/{conversation}/messages', [ChatController::class, 'getMessages'])->name('chat.messages');
+    Route::get('/chat/{conversation}/check-latest', [ChatController::class, 'checkLatestMessages'])->name('chat.check-latest');
+    Route::get('/chat/check-all', [ChatController::class, 'checkAllConversations'])->name('chat.check-all');
+    Route::post('/chat/{conversation}/toggle-favorite', [ChatController::class, 'toggleFavorite'])->name('chat.toggle-favorite');
+    Route::post('/chat/{conversation}/mute', [ChatController::class, 'toggleMute'])->name('chat.toggleMute');
+    Route::post('/chat/message/{message}/edit', [ChatController::class, 'editMessage'])->name('chat.editMessage');
+    Route::delete('/chat/message/{message}', [ChatController::class, 'deleteMessage'])->name('chat.deleteMessage');
+    Route::get('/chat/{conversation}', [ChatController::class, 'getConversationDetails'])->name('chat.details');
+    Route::delete('/chat/{conversation}', [ChatController::class, 'deleteConversation'])->name('chat.deleteConversation');
+    Route::post('/chat/direct', [ChatController::class, 'startDirectChat'])->name('chat.direct');
+    Route::post('/chat/upload-image', [ChatController::class, 'uploadImage'])->name('chat.upload.image');
+});
 
 // Public routes
 Route::get('/privacy-policy', function () {
